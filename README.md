@@ -1,2 +1,2 @@
 # povTable
-extesive povRanian
+extensive povRanian
