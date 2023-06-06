@@ -7,28 +7,28 @@ import sys
 from PIL import Image
 
 
-args = sys.argv
+# args = sys.argv
 
 # 配列設定
 PIXELS = 24  #LED1本あたりのセル数
 NUMTAPES = 2    #繋げるLEDの本数
 Div = 100       #1周の分割数
-l = [[0] * PIXELS*NUMTAPES for i in range(Div)] #LEDsのRGBを格納するためのリスト宣言・初期化
+l = [[0] * PIXELS*NUMTAPES for i in range(Div)] #RGBを格納するためのリスト宣言・初期化
 
 Bright = 20     # 輝度
 Led0Bright = 2  # 中心LEDの輝度 [%]
 
 # ファイル作成
 file = open('graphics.h', 'w')
-file.write('const NUMPIXELS ' + str(PIXELS*NUMTAPES) + '\n')
-file.write('const Div ' + str(Div) + '\n' + '\n')
+file.write('const int VNUMPIXELS = ' + str(PIXELS*NUMTAPES) + ';\n') #VNUMPIXELSかHNUMPIXELSに変更。
+file.write('const int Div = ' + str(Div) + ';\n' + '\n')
 
 
-file.write('const uint32_t pic [Div][NUMPIXELS] = {' + '\n')
+file.write('const uint32_t vpic [Div][VNUMPIXELS] = {' + '\n') #vpicかhpicに変更。#VNUMPIXELSかHNUMPIXELSに変更。
 
 # 画像ファイルを読み込む(png,jpg,bmpなどが使用可能)
-pic1 = "monstar.png"
-pic2 = "monstar.png"
+pic1 = "monstar.png" #1枚目の画像
+pic2 = "monstar.png" #2枚目の画像
 
 
 # 画像変換関数
@@ -81,8 +81,10 @@ def polarConv(pic, n):
 # 変換, lに格納
 polarConv(pic1, 1) #0~23番目のセル l[j][i]
 polarConv(pic2, 2) #47~24番目のセル l[j][47-i]
+# polarConv(pic3, 3) #48~71番目のセル l[j][i+48]
+# polarConv(pic4, 4) #95~72番目のセル l[j][96-i]
 
-#lの内容を書き込む
+#lの内容を書き出し
 for j in range(0, Div):
     file.write('\t{')
     for i in range(0, PIXELS*NUMTAPES):

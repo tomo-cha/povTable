@@ -3,7 +3,6 @@
 #include "graphics.h"
 
 
-int numRot = 0;
 int numDiv = 0;
 int stateDiv = 0;
 int stateRot = 0;
@@ -17,8 +16,8 @@ const VCLOCKPIN = 18;
 // const HCLOCKPIN = 14;
 
 
-Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTATR_RGB); //DOTSTATR_BRGなどでも設定可能
-// Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTATR_RGB);
+Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_RGB); //DOTSTATR_BRGなどでも設定可能
+// Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTAR_RGB);
 
 
 void setup()
@@ -26,15 +25,15 @@ void setup()
     Serial.begin(115200);
 
     vstrip.begin();
-    htrip.begin();
+    // htrip.begin();
     vstrip.show();
     // hstrip.show();
 }
 
 
-void void loop()
+void loop()
 {
-    Serial.print(analogRead(PHOTOPIN));//赤外線センサの動作確認用
+    Serial.println(analogRead(PHOTOPIN));//赤外線センサの動作確認用
 
 
     //赤外線センサの排他処理, 一回転(赤外線センサが反応してから次に反応するまで)するのにかかる時間(rotTime)の計算
@@ -52,12 +51,12 @@ void void loop()
         //Serial.print("rpm="); Serial.println(rpm);
     }
 
-
-    if(stateDiv == 1 && micros() -timeOld > rotTime / Div * numDiv)
+    //経過時間から光らせるLEDを決める。
+    if(stateDiv == 1 && micros() -timeOld < rotTime / Div * numDiv)
     {
         stateDiv = 0;
     }
-    if(stateDiv == 1 && micros() -timeOld < rotTime / Div * numDiv)
+    if(stateDiv == 0 && micros() -timeOld > rotTime / Div * numDiv)
     {
         stateDiv = 1;
 
@@ -77,7 +76,7 @@ void void loop()
         // }
 
         
-        //setした通りに光らせる
+        //setした通りにLEDを光らせる
         vstrip.show();
         // hstrip.show();
 
