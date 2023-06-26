@@ -11,8 +11,8 @@ from PIL import Image
 
 # 配列設定
 PIXELS = 24  #LED1本あたりのセル数
-NUMTAPES = 2    #繋げるLEDの本数
-Div = 100       #1周の分割数
+NUMTAPES = 5    #繋げるLEDの本数
+Div = 80       #1周の分割数
 l = [[0] * PIXELS*NUMTAPES for i in range(Div)] #RGBを格納するためのリスト宣言・初期化
 
 Bright = 20     # 輝度
@@ -27,8 +27,11 @@ file.write('const int Div = ' + str(Div) + ';\n' + '\n')
 file.write('const uint32_t vpic [Div][VNUMPIXELS] = {' + '\n') #vpicかhpicに変更。#VNUMPIXELSかHNUMPIXELSに変更。
 
 # 画像ファイルを読み込む(png,jpg,bmpなどが使用可能)
-pic1 = "monstar.png" #1枚目の画像
-pic2 = "monstar.png" #2枚目の画像
+pic1 = "reiwa.bmp" #1枚目の画像
+pic2 = "reiwa.bmp" #2枚目の画像
+pic3 = "reiwa.bmp" #3枚目の画像
+pic4 = "reiwa.bmp" #4枚目の画像
+pic5 = "reiwa.bmp" #5枚目の画像
 
 
 # 画像変換関数
@@ -72,7 +75,7 @@ def polarConv(pic, n):
             # https://yutarine.blogspot.com/2018/12/python-format-hex-zerofill.html
             # https://docs.python.org/ja/3/tutorial/inputoutput.html
             if(n%2 == 1):
-                l[j][i] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
+                l[j][i+(n-1)*PIXELS] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
             else:
                 l[j][abs((PIXELS*n-1)-i)] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
 
@@ -81,10 +84,11 @@ def polarConv(pic, n):
 # 変換, lに格納
 polarConv(pic1, 1) #0~23番目のセル l[j][i]
 polarConv(pic2, 2) #47~24番目のセル l[j][47-i]
-# polarConv(pic3, 3) #48~71番目のセル l[j][i+48]
-# polarConv(pic4, 4) #95~72番目のセル l[j][96-i]
+polarConv(pic3, 3) #48~71番目のセル l[j][i+48]
+polarConv(pic4, 4) #95~72番目のセル l[j][95-i]
+polarConv(pic5, 5) #96~119番目のセル l[j][i+96]
 
-#lの内容を書き出し
+# lの内容を書き出し
 for j in range(0, Div):
     file.write('\t{')
     for i in range(0, PIXELS*NUMTAPES):
@@ -94,6 +98,5 @@ for j in range(0, Div):
         else:
             file.write(', ')
 file.write('};\n')
-
 
 file.close()
