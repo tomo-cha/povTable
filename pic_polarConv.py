@@ -24,7 +24,7 @@ file.write('const int VNUMPIXELS = ' + str(PIXELS*NUMTAPES) + ';\n') #VNUMPIXELS
 file.write('const int Div = ' + str(Div) + ';\n' + '\n')
 
 
-file.write('const uint32_t vpic [Div][VNUMPIXELS] = {' + '\n') #vpicかhpicに変更。#VNUMPIXELSかHNUMPIXELSに変更。
+file.write('uint32_t vpic [Div][VNUMPIXELS] = {' + '\n') #vpicかhpicに変更。#VNUMPIXELSかHNUMPIXELSに変更。
 
 # 画像ファイルを読み込む(png,jpg,bmpなどが使用可能)
 pic1 = "monstar.png" #1枚目の画像

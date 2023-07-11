@@ -217,6 +217,8 @@
                 "/Users/takaharatomotakeshi/Documents/Arduino/hardware/espressif/esp32/variants/esp32",
                 "/Users/takaharatomotakeshi/Documents/Arduino/libraries/Adafruit_BusIO",
                 "/Users/takaharatomotakeshi/Documents/Arduino/hardware/espressif/esp32/libraries/SPI/src",
+                "/Users/takaharatomotakeshi/Documents/Arduino/hardware/espressif/esp32/libraries/WiFi/src",
+                "/Users/takaharatomotakeshi/Documents/Arduino/hardware/espressif/esp32/libraries/AsyncUDP/src",
                 "/Users/takaharatomotakeshi/Documents/Arduino/hardware/espressif/esp32/libraries/Wire/src",
                 "/Users/takaharatomotakeshi/Library/Arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/gcc8_4_0-esp-2021r2-patch5/xtensa-esp32-elf/include/c++/8.4.0",
                 "/Users/takaharatomotakeshi/Library/Arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/gcc8_4_0-esp-2021r2-patch5/xtensa-esp32-elf/include/c++/8.4.0/xtensa-esp32-elf",

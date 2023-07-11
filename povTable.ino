@@ -1,6 +1,11 @@
 #include "Adafruit_DotStar.h"
 #include <SPI.h>
+#include <WiFi.h>
+#include <AsyncUDP.h>
 #include "graphics.h"
+#include "security.h"
+
+AsyncUDP udp;
 
 int numDiv = 0;
 int stateDiv = 0;
@@ -20,6 +25,9 @@ int value = 0;
 Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_RGB); // DOTSTATR_BRGなどでも設定可能
 // Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTAR_RGB);
 
+char chararrayDiv[] = "0x00";
+char chararrayColor[] = "0xffffff";
+
 void setup()
 {
     Serial.begin(115200);
@@ -28,6 +36,33 @@ void setup()
     ledcSetup(0, 30000, 8);
     // ledPinをチャネル0へ接続
     ledcAttachPin(motorPin, 0);
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+        Serial.println("WiFi Failed");
+        while (1) {
+            delay(1000);
+        }
+    }
+
+    //UDP受信
+    if (udp.listen(1234)) { //python側とポートを合わせる。自由な数字で良い
+        Serial.print("UDP Listening on IP: ");
+        Serial.println(WiFi.localIP());
+        udp.onPacket([](AsyncUDPPacket packet) {
+            chararrayDiv[2] = packet.data()[0];
+            chararrayDiv[3] = packet.data()[1];
+            //      Serial.print("strtoul=");
+            //      Serial.println(int(strtoul(chararrayDiv, NULL, 16))); //パケットロスをしらべる
+            for (int i = 0; i < VNUMPIXELS ; i++) {
+                for (int j = 0; j < 6 ; j++) {
+                    chararrayColor[j + 2] = packet.data()[2 + i * 6 + j];
+                }
+                vpic[int(strtoul(chararrayDiv, NULL, 16))][i] = strtoul(chararrayColor, NULL, 16);
+            }
+        });
+    }
 
     vstrip.begin();
     // htrip.begin();
