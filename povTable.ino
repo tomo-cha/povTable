@@ -12,15 +12,15 @@ int stateDiv = 0;
 int stateRot = 0;
 const int PHOTOPIN = 33;
 const int th_SENSORS = 3000; // 赤外線センサの閾値
+const int motor_ENCODAPIN = 27;
 float rpm;
-volatile unsigned long rotTime, timeOld, timeNow; // コンパイル時に無視されないようにvolatile修飾子
+int value = 0;
+volatile unsigned long rotTime, timeOld, timeNow, Time, pre_time; // コンパイル時に無視されないようにvolatile修飾子
 const int VDATAPIN = 23;
 const int VCLOCKPIN = 18;
 // const HDATAPIN = 13;
 // const HCLOCKPIN = 14;
 const int motorPin = A19;
-int sw = 0; //人感センサー 回転の有無を決める
-int value = 0;
 
 Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_RGB); // DOTSTATR_BRGなどでも設定可能
 // Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTAR_RGB);
@@ -28,41 +28,55 @@ Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_RGB); // DOTSTA
 char chararrayDiv[] = "0x00";
 char chararrayColor[] = "0xffffff";
 
+// 割り込み処理 ボタンを検知
+void IRAM_ATTR button_pushed()
+{
+    value += 1; 
+}
+
+
 void setup()
 {
+    // Serial通
     Serial.begin(115200);
 
+    // motor
     // 使用するタイマーのチャネルと周波数を設定
     ledcSetup(0, 30000, 8);
     // ledPinをチャネル0へ接続
     ledcAttachPin(motorPin, 0);
 
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
-    if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-        Serial.println("WiFi Failed");
-        while (1) {
-            delay(1000);
-        }
-    }
+    pinMode(motor_ENCODAPIN, INPUT);
+    // 割り込みを登録 トリガはLOWになった時
+	attachInterrupt(motor_ENCODAPIN, button_pushed, FALLING);
 
-    //UDP受信
-    if (udp.listen(1234)) { //python側とポートを合わせる。自由な数字で良い
-        Serial.print("UDP Listening on IP: ");
-        Serial.println(WiFi.localIP());
-        udp.onPacket([](AsyncUDPPacket packet) {
-            chararrayDiv[2] = packet.data()[0];
-            chararrayDiv[3] = packet.data()[1];
-            //      Serial.print("strtoul=");
-            //      Serial.println(int(strtoul(chararrayDiv, NULL, 16))); //パケットロスをしらべる
-            for (int i = 0; i < VNUMPIXELS ; i++) {
-                for (int j = 0; j < 6 ; j++) {
-                    chararrayColor[j + 2] = packet.data()[2 + i * 6 + j];
-                }
-                vpic[int(strtoul(chararrayDiv, NULL, 16))][i] = strtoul(chararrayColor, NULL, 16);
-            }
-        });
-    }
+    // WiFi.mode(WIFI_STA);
+    // WiFi.begin(ssid, password);
+    // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    //     Serial.println("WiFi Failed");
+    //     while (1) {
+    //         delay(1000);
+    //     }
+    // }
+
+    // //UDP受信
+    // if (udp.listen(1234)) { //python側とポートを合わせる。自由な数字で良い
+    //     Serial.print("UDP Listening on IP: ");
+    //     Serial.println(WiFi.localIP());
+    //     udp.onPacket([](AsyncUDPPacket packet) {
+    //         chararrayDiv[2] = packet.data()[0];
+    //         chararrayDiv[3] = packet.data()[1];
+    //         //      Serial.print("strtoul=");
+    //         //      Serial.println(int(strtoul(chararrayDiv, NULL, 16))); //パケットロスをしらべる
+    //         for (int i = 0; i < VNUMPIXELS ; i++) {
+    //             for (int j = 0; j < 6 ; j++) {
+    //                 chararrayColor[j + 2] = packet.data()[2 + i * 6 + j];
+    //             }
+    //             vpic[int(strtoul(chararrayDiv, NULL, 16))][i] = strtoul(chararrayColor, NULL, 16);
+    //         }
+    //     });
+    // }
+
 
     vstrip.begin();
     // htrip.begin();
@@ -72,26 +86,20 @@ void setup()
 
 void loop()
 {
-    Serial.println(analogRead(PHOTOPIN)); // 赤外線センサの動作確認用
-    // for(int a=0;a<24*5;a++){
-    //     vstrip.setPixelColor(a, 'AA0000');
-    //     vstrip.show();
-    //     vstrip.clear();
-    //     vstrip.show();
-    //     delay(30);
-    // }
-    // if(sw==0){
-    //     while(value<80){ //だんだん早くなって80をキープ
-    //         ledcWrite(0, value);
-    //         value += 1;
-    //     }
-    // }else{
-    //     while(value>0){ //だんだんゆっくりになって0をキープ
-    //         ledcWrite(0, value);
-    //         value -= 1;
-    //     }
-    // }
+    // Serial.println(analogRead(PHOTOPIN)); // 赤外線センサの動作確認用
+    // Serial.println(value);
     ledcWrite(0, 200);
+    if(value == 0)
+    {
+        pre_time = micros();
+    }else if (value == 5)
+    {
+        Time = micros();
+        rpm = 60000000 / (Time - pre_time);
+        value = 0;
+        Serial.print("rpm="); Serial.println(rpm);
+    }
+    
     
 
     // 赤外線センサの排他処理, 一回転(赤外線センサが反応してから次に反応するまで)するのにかかる時間(rotTime)の計算
@@ -105,8 +113,8 @@ void loop()
     if (stateRot == 1 && analogRead(PHOTOPIN) > th_SENSORS)
     {
         stateRot = 0;
-        rpm = 60 * 1000 * 1000 * 1 / rotTime; //rotation per minute
-        Serial.print("rpm="); Serial.println(rpm);
+        // rpm = 60 * 1000 * 1000 * 1 / rotTime; //rotation per minute
+        // Serial.print("rpm="); Serial.println(rpm);
     }
 
     // 経過時間から光らせるLEDを決める。
@@ -142,3 +150,4 @@ void loop()
         }
     }
 }
+
