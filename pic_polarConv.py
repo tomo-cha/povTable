@@ -62,14 +62,14 @@ def polarConv(pic, n):
         for i in range(0, hC+1):
             # 座標色取得
             # 参考：http://peaceandhilightandpython.hatenablog.com/entry/2016/01/03/151320
-            rP = int(imgRedu[hC + math.ceil(i * math.cos(2*math.pi/Div*j)),
-                             wC - math.ceil(i * math.sin(2*math.pi/Div*j)), 2]  # Rを取得
+            rP = int(imgRedu[hC - math.ceil(i * math.cos(2*math.pi/Div*j)),
+                             wC + math.ceil(i * math.sin(2*math.pi/Div*j)), 2]  # Rを取得
                      * ((100 - Led0Bright) / PIXELS * i + Led0Bright) / 100 * Bright / 100)  # 明るさ調整
-            gP = int(imgRedu[hC + math.ceil(i * math.cos(2*math.pi/Div*j)),
-                             wC - math.ceil(i * math.sin(2*math.pi/Div*j)), 1]  # Gを取得
+            gP = int(imgRedu[hC - math.ceil(i * math.cos(2*math.pi/Div*j)),
+                             wC + math.ceil(i * math.sin(2*math.pi/Div*j)), 1]  # Gを取得
                      * ((100 - Led0Bright) / PIXELS * i + Led0Bright) / 100 * Bright / 100)  # 明るさ調整
-            bP = int(imgRedu[hC + math.ceil(i * math.cos(2*math.pi/Div*j)),
-                             wC - math.ceil(i * math.sin(2*math.pi/Div*j)), 0]  # Bを取得
+            bP = int(imgRedu[hC - math.ceil(i * math.cos(2*math.pi/Div*j)),
+                             wC + math.ceil(i * math.sin(2*math.pi/Div*j)), 0]  # Bを取得
                      * ((100 - Led0Bright) / PIXELS * i + Led0Bright) / 100 * Bright / 100)  # 明るさ調整
             
             # https://yutarine.blogspot.com/2018/12/python-format-hex-zerofill.html

@@ -18,12 +18,13 @@ int value = 0;
 volatile unsigned long rotTime, timeOld, timeNow, Time, pre_time; // コンパイル時に無視されないようにvolatile修飾子
 const int VDATAPIN = 23;
 const int VCLOCKPIN = 18;
-// const HDATAPIN = 13;
-// const HCLOCKPIN = 14;
-const int motorPin = A19;
+const int HDATAPIN = 13;
+const int HCLOCKPIN = 14;
+const int HNUMPIXELS = VNUMPIXELS;
+const int motorPin = A19; //gpio26
 
 Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_RGB); // DOTSTATR_BRGなどでも設定可能
-// Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTAR_RGB);
+Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTAR_RGB);
 
 char chararrayDiv[] = "0x00";
 char chararrayColor[] = "0xffffff";
@@ -31,9 +32,8 @@ char chararrayColor[] = "0xffffff";
 // 割り込み処理 ボタンを検知
 void IRAM_ATTR button_pushed()
 {
-    value += 1; 
+    value += 1;
 }
-
 
 void setup()
 {
@@ -48,106 +48,128 @@ void setup()
 
     pinMode(motor_ENCODAPIN, INPUT);
     // 割り込みを登録 トリガはLOWになった時
-	attachInterrupt(motor_ENCODAPIN, button_pushed, FALLING);
-
-    // WiFi.mode(WIFI_STA);
-    // WiFi.begin(ssid, password);
-    // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    //     Serial.println("WiFi Failed");
-    //     while (1) {
-    //         delay(1000);
-    //     }
-    // }
-
-    // //UDP受信
-    // if (udp.listen(1234)) { //python側とポートを合わせる。自由な数字で良い
-    //     Serial.print("UDP Listening on IP: ");
-    //     Serial.println(WiFi.localIP());
-    //     udp.onPacket([](AsyncUDPPacket packet) {
-    //         chararrayDiv[2] = packet.data()[0];
-    //         chararrayDiv[3] = packet.data()[1];
-    //         //      Serial.print("strtoul=");
-    //         //      Serial.println(int(strtoul(chararrayDiv, NULL, 16))); //パケットロスをしらべる
-    //         for (int i = 0; i < VNUMPIXELS ; i++) {
-    //             for (int j = 0; j < 6 ; j++) {
-    //                 chararrayColor[j + 2] = packet.data()[2 + i * 6 + j];
-    //             }
-    //             vpic[int(strtoul(chararrayDiv, NULL, 16))][i] = strtoul(chararrayColor, NULL, 16);
-    //         }
-    //     });
-    // }
+    attachInterrupt(motor_ENCODAPIN, button_pushed, FALLING);
 
 
     vstrip.begin();
-    // htrip.begin();
+    hstrip.begin();
     vstrip.show();
-    // hstrip.show();
+    hstrip.show();
 }
 
 void loop()
 {
-    // Serial.println(analogRead(PHOTOPIN)); // 赤外線センサの動作確認用
-    // Serial.println(value);
-    ledcWrite(0, 200);
-    if(value == 0)
+    Serial.println(analogRead(PHOTOPIN)); // 赤外線センサの動作確認用
+    if (millis() > 6000) // 10秒経ったら回転はじめ
     {
-        pre_time = micros();
-    }else if (value == 5)
-    {
-        Time = micros();
-        rpm = 60000000 / (Time - pre_time);
-        value = 0;
-        Serial.print("rpm="); Serial.println(rpm);
-    }
-    
-    
+        ledcWrite(0, 220);
+        if (value == 0)
+        {
+            pre_time = micros();
+        }
+        else if (value == 5)
+        {
+            Time = micros();
+            rpm = 60000000 / (Time - pre_time);
+            rotTime = Time - pre_time;
+            value = 0;
+            Serial.print("rpm=");
+            Serial.println(rpm);
+        }
 
-    // 赤外線センサの排他処理, 一回転(赤外線センサが反応してから次に反応するまで)するのにかかる時間(rotTime)の計算
-    if (stateRot == 0 && analogRead(PHOTOPIN) < th_SENSORS)
-    {
-        timeNow = micros();
-        rotTime = timeNow - timeOld;
-        timeOld = timeNow;
-        stateRot = 1;
-    }
-    if (stateRot == 1 && analogRead(PHOTOPIN) > th_SENSORS)
-    {
-        stateRot = 0;
-        // rpm = 60 * 1000 * 1000 * 1 / rotTime; //rotation per minute
-        // Serial.print("rpm="); Serial.println(rpm);
-    }
+        // 赤外線センサの排他処理, 一回転(赤外線センサが反応してから次に反応するまで)するのにかかる時間(rotTime)の計算
+        if (stateRot == 0 && analogRead(PHOTOPIN) < th_SENSORS)
+        {
+            timeNow = micros();
+            // rotTime = timeNow - timeOld;
+            timeOld = timeNow;
+            stateRot = 1;
+        }
+        if (stateRot == 1 && analogRead(PHOTOPIN) > th_SENSORS)
+        {
+            stateRot = 0;
+            // rpm = 60 * 1000 * 1000 * 1 / rotTime; //rotation per minute
+            // Serial.print("rpm="); Serial.println(rpm);
+        }
 
-    // 経過時間から光らせるLEDを決める。
-    if (stateDiv == 1 && micros() - timeOld < rotTime / Div * (numDiv + 1))
-    {
-        stateDiv = 0;
+        // 経過時間から光らせるLEDを決める。
+        // if (stateDiv == 1 && micros() - timeOld < rotTime / Div * (numDiv + 1))
+        // {
+        //     stateDiv = 0;
+        // }
+        // if (stateDiv == 0 && micros() - timeOld > rotTime / Div * (numDiv + 1))
+        // {
+        //     stateDiv = 1;
+        if (micros() - timeOld > rotTime / Div * (numDiv + 1))
+        {
+            vstrip.clear();
+            hstrip.clear();
+
+            // どのLEDを何色に光らせるのかをset
+            for (int i = 0; i < VNUMPIXELS; i++)
+            {
+                vstrip.setPixelColor(i, pgm_read_dword(&vpic[numDiv][i]));
+                hstrip.setPixelColor(i, pgm_read_dword(&vpic[(numDiv + (Div / 2)) % 100][i]));
+            }
+            //for (int i = 0; i < HNUMPIXELS; i++)
+            //{
+            //    hstrip.setPixelColor(i, pgm_read_dword(&vpic[(numDiv + (Div / 2)) % 100][i])); // 半分ずれる
+            //}
+            
+
+            // setした通りにLEDを光らせる
+            vstrip.show();
+            hstrip.show();
+
+            numDiv++;
+            if (numDiv >= Div)
+            {
+                numDiv = 0;
+            }
+        }
     }
-    if (stateDiv == 0 && micros() - timeOld > rotTime / Div * (numDiv + 1))
+    else
     {
-        stateDiv = 1;
-
-        vstrip.clear();
-        // hstrip.clear();
-
-        // どのLEDを何色に光らせるのかをset
         for (int i = 0; i < VNUMPIXELS; i++)
         {
-            vstrip.setPixelColor(i, pgm_read_dword(&vpic[numDiv][i]));
+            vstrip.setPixelColor(i, 0x00FF00);
+            hstrip.setPixelColor(i, 0x00FF00);
         }
-        // for(int i=0; i<HNUMPIXELS; i++)
-        // {
-        //     hstrip.setPixelColor(i, pgm_read_dword(&hpic[numDiv+(Div/2)][i])); //半分ずれる
-        // }
-
-        // setした通りにLEDを光らせる
         vstrip.show();
-        // hstrip.show();
+        hstrip.show();
+        delay(1000);
+        vstrip.clear();
+        hstrip.clear();
+        vstrip.show();
+        hstrip.show();
+        delay(1000);
 
-        numDiv++;
-        if (numDiv >= Div)
+        for (int i = 0; i < VNUMPIXELS; i++)
         {
-            numDiv = 0;
+            vstrip.setPixelColor(i, 0x50F4FF);
+            hstrip.setPixelColor(i, 0x50F4FF);
         }
+        vstrip.show();
+        hstrip.show();
+        delay(1000);
+        vstrip.clear();
+        hstrip.clear();
+        vstrip.show();
+        hstrip.show();
+        delay(1000);
+
+        for (int i = 0; i < VNUMPIXELS; i++)
+        {
+            vstrip.setPixelColor(i, 0x0000FF);
+            hstrip.setPixelColor(i, 0x0000FF);
+        }
+        vstrip.show();
+        hstrip.show();
+        delay(1000);
+        vstrip.clear();
+        hstrip.clear();
+        vstrip.show();
+        hstrip.show();
+        delay(1000);
     }
 }
-
