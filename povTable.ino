@@ -11,7 +11,7 @@ int numDiv = 0;
 int stateDiv = 0;
 int stateRot = 0;
 const int PHOTOPIN = 33;
-const int th_SENSORS = 3000; // 赤外線センサの閾値
+const int th_PHOTOSENSORS = 3000; // 赤外線センサの閾値
 const int motor_ENCODAPIN = 27;
 float rpm;
 int value = 0;
@@ -21,7 +21,7 @@ const int VCLOCKPIN = 18;
 const int HDATAPIN = 13;
 const int HCLOCKPIN = 14;
 const int HNUMPIXELS = VNUMPIXELS;
-const int motorPin = A19; //gpio26
+const int motorPin = A19; // gpio26
 
 Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_RGB); // DOTSTATR_BRGなどでも設定可能
 Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTAR_RGB);
@@ -37,16 +37,17 @@ void IRAM_ATTR button_pushed()
 
 void setup()
 {
-    // Serial通
+    // Serial通信
     Serial.begin(115200);
 
-    // motor
+    // モーター
     // 使用するタイマーのチャネルと周波数を設定
     ledcSetup(0, 30000, 8);
-    // ledPinをチャネル0へ接続
+    // motorPinをチャネル0へ接続
     ledcAttachPin(motorPin, 0);
 
     pinMode(motor_ENCODAPIN, INPUT);
+
     // 割り込みを登録 トリガはLOWになった時
     attachInterrupt(motor_ENCODAPIN, button_pushed, FALLING);
 
@@ -60,9 +61,9 @@ void setup()
 void loop()
 {
     Serial.println(analogRead(PHOTOPIN)); // 赤外線センサの動作確認用
-    if (millis() > 6000) // 10秒経ったら回転はじめ
+    if (millis() > 0)                  // 6秒経ったら回転はじめ
     {
-        ledcWrite(0, 220);
+        ledcWrite(0, 220); //pwm信号の送信 0~256
         if (value == 0)
         {
             pre_time = micros();
@@ -78,14 +79,14 @@ void loop()
         }
 
         // 赤外線センサの排他処理, 一回転(赤外線センサが反応してから次に反応するまで)するのにかかる時間(rotTime)の計算
-        if (stateRot == 0 && analogRead(PHOTOPIN) < th_SENSORS)
+        if (stateRot == 0 && analogRead(PHOTOPIN) < th_PHOTOSENSORS)
         {
             timeNow = micros();
             // rotTime = timeNow - timeOld;
             timeOld = timeNow;
             stateRot = 1;
         }
-        if (stateRot == 1 && analogRead(PHOTOPIN) > th_SENSORS)
+        if (stateRot == 1 && analogRead(PHOTOPIN) > th_PHOTOSENSORS)
         {
             stateRot = 0;
             // rpm = 60 * 1000 * 1000 * 1 / rotTime; //rotation per minute
@@ -130,46 +131,51 @@ void loop()
     }
     else
     {
-        for (int i = 0; i < VNUMPIXELS; i++)
-        {
-            vstrip.setPixelColor(i, 0x00FF00);
-            hstrip.setPixelColor(i, 0x00FF00);
-        }
-        vstrip.show();
-        hstrip.show();
-        delay(1000);
-        vstrip.clear();
-        hstrip.clear();
-        vstrip.show();
-        hstrip.show();
-        delay(1000);
-
-        for (int i = 0; i < VNUMPIXELS; i++)
-        {
-            vstrip.setPixelColor(i, 0x50F4FF);
-            hstrip.setPixelColor(i, 0x50F4FF);
-        }
-        vstrip.show();
-        hstrip.show();
-        delay(1000);
-        vstrip.clear();
-        hstrip.clear();
-        vstrip.show();
-        hstrip.show();
-        delay(1000);
-
-        for (int i = 0; i < VNUMPIXELS; i++)
-        {
-            vstrip.setPixelColor(i, 0x0000FF);
-            hstrip.setPixelColor(i, 0x0000FF);
-        }
-        vstrip.show();
-        hstrip.show();
-        delay(1000);
-        vstrip.clear();
-        hstrip.clear();
-        vstrip.show();
-        hstrip.show();
-        delay(1000);
+        attension_signal(); //回転前の注意喚起をする
     }
+}
+
+void attension_signal()
+{
+    for (int i = 0; i < VNUMPIXELS; i++)
+    {
+        vstrip.setPixelColor(i, 0x00FF00);
+        hstrip.setPixelColor(i, 0x00FF00);
+    }
+    vstrip.show();
+    hstrip.show();
+    delay(1000);
+    vstrip.clear();
+    hstrip.clear();
+    vstrip.show();
+    hstrip.show();
+    delay(1000);
+
+    for (int i = 0; i < VNUMPIXELS; i++)
+    {
+        vstrip.setPixelColor(i, 0x50F4FF);
+        hstrip.setPixelColor(i, 0x50F4FF);
+    }
+    vstrip.show();
+    hstrip.show();
+    delay(1000);
+    vstrip.clear();
+    hstrip.clear();
+    vstrip.show();
+    hstrip.show();
+    delay(1000);
+
+    for (int i = 0; i < VNUMPIXELS; i++)
+    {
+        vstrip.setPixelColor(i, 0x0000FF);
+        hstrip.setPixelColor(i, 0x0000FF);
+    }
+    vstrip.show();
+    hstrip.show();
+    delay(1000);
+    vstrip.clear();
+    hstrip.clear();
+    vstrip.show();
+    hstrip.show();
+    delay(1000);
 }

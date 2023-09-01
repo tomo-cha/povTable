@@ -10,8 +10,8 @@ from PIL import Image
 # args = sys.argv
 
 # 配列設定
-PIXELS = 24  #LED1本あたりのセル数
-NUMTAPES = 4    #繋げるLEDの本数
+PIXELS = 22  #LED1本あたりのセル数
+NUMTAPES = 5    #繋げるLEDの本数
 Div = 100       #1周の分割数
 l = [[0] * PIXELS*NUMTAPES for i in range(Div)] #RGBを格納するためのリスト宣言・初期化
 
@@ -86,7 +86,7 @@ polarConv(pic1, 1) #0~23番目のセル l[j][i]
 polarConv(pic2, 2) #47~24番目のセル l[j][47-i]
 polarConv(pic3, 3) #48~71番目のセル l[j][i+48]
 polarConv(pic4, 4) #95~72番目のセル l[j][95-i]
-# polarConv(pic5, 5) #96~119番目のセル l[j][i+96]
+polarConv(pic5, 5) #96~119番目のセル l[j][i+96]
 
 # lの内容を書き出し
 for j in range(0, Div):
