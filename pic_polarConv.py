@@ -12,7 +12,7 @@ from PIL import Image
 # 配列設定
 PIXELS = 22  #LED1本あたりのセル数
 NUMTAPES = 5    #繋げるLEDの本数
-Div = 100       #1周の分割数
+Div = 60       #1周の分割数
 l = [[0] * PIXELS*NUMTAPES for i in range(Div)] #RGBを格納するためのリスト宣言・初期化
 
 Bright = 20     # 輝度
@@ -27,11 +27,11 @@ file.write('const int Div = ' + str(Div) + ';\n' + '\n')
 file.write('uint32_t vpic [Div][VNUMPIXELS] = {' + '\n') #vpicかhpicに変更。#VNUMPIXELSかHNUMPIXELSに変更。
 
 # 画像ファイルを読み込む(png,jpg,bmpなどが使用可能)
-pic1 = "monstar.png" #1枚目の画像
-pic2 = "monstar.png" #2枚目の画像
-pic3 = "monstar.png" #3枚目の画像
-pic4 = "monstar.png" #4枚目の画像
-pic5 = "monstar.png" #5枚目の画像
+pic1 = "reiwa.bmp" #1枚目の画像
+pic2 = "reiwa.bmp" #2枚目の画像
+pic3 = "reiwa.bmp" #3枚目の画像
+pic4 = "reiwa.bmp" #4枚目の画像
+pic5 = "color_circle.png" #5枚目の画像
 
 
 # 画像変換関数
