@@ -1,9 +1,18 @@
 #include "Adafruit_DotStar.h"
 #include <SPI.h>
-#include <WiFi.h>
-#include "graphics.h"
+#include "WiFi.h"
+#include "AsyncUDP.h"
+#include "security.h"
 
-#define DEBUG
+// #define DEBUG
+
+AsyncUDP udp;
+
+const int VNUMPIXELS = 22*5;
+const int Div = 60;
+const int Frame = 5;
+
+uint32_t vpic[Div][VNUMPIXELS] = {0, };
 
 int stateRot = 0;
 int numDiv = 0;
@@ -20,7 +29,10 @@ const int HCLOCKPIN = 14;
 const int HNUMPIXELS = VNUMPIXELS;
 const int motorPin = A19; // gpio26
 
-Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_GBR); // DOTSTATR_BRGなどでも設定可能 RGB, RBG, BRG, 
+char chararrayDiv[] = "0x00";
+char chararrayColor[] = "0xffffff";
+
+Adafruit_DotStar vstrip(VNUMPIXELS, VDATAPIN, VCLOCKPIN, DOTSTAR_GBR); // DOTSTATR_BRGなどでも設定可能 RGB, RBG, BRG,
 Adafruit_DotStar hstrip(HNUMPIXELS, HDATAPIN, HCLOCKPIN, DOTSTAR_GBR);
 
 // 割り込み処理 ボタンを検知
@@ -33,6 +45,41 @@ void setup()
 {
     // Serial通信
     Serial.begin(115200);
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    if (WiFi.waitForConnectResult() != WL_CONNECTED)
+    {
+        Serial.println("WiFi Failed");
+        while (1)
+        {
+            delay(1000);
+        }
+    }
+
+    // UDP受信
+    if (udp.listen(1234)) // python側とポートを合わせる。自由な数字で良い
+    {
+        Serial.print("UDP Listening on IP: ");
+        Serial.println(WiFi.localIP());
+        udp.onPacket([](AsyncUDPPacket packet)
+                     {
+                         chararrayDiv[2] = packet.data()[0];
+                         chararrayDiv[3] = packet.data()[1];
+                         Serial.print("strtoul=");
+                         Serial.println(int(strtoul(chararrayDiv, NULL, 16))); // パケットロスをしらべる
+                         // for (int k = 0; k < Frame; k++) { //gif用
+                         for (int i = 0; i < VNUMPIXELS; i++)
+                         {
+                             for (int j = 0; j < 6; j++)
+                             {
+                                 chararrayColor[j + 2] = packet.data()[2 + i * 6 + j];
+                             }
+                             vpic[int(strtoul(chararrayDiv, NULL, 16))][i] = strtoul(chararrayColor, NULL, 16);
+                         }
+                         //      }
+                     });
+    }
 
     // モーター
     // 使用するタイマーのチャネルと周波数を設定
@@ -51,6 +98,8 @@ void setup()
     hstrip.clear();
     vstrip.show();
     hstrip.show();
+
+    delay(1000);
 }
 
 void loop()
@@ -75,6 +124,11 @@ void loop()
         timeOld = micros();
         numDiv = 0;
         stateRot = 1;
+        // numRot++;
+        // if (numRot >= Frame)
+        // {
+        //     numRot = 0;
+        // }
     }
     if (stateRot == 1 && analogRead(PHOTOPIN) > th_PHOTOSENSORS)
     {
@@ -113,10 +167,10 @@ void loop()
     // Serial.println(rpm);
     // Serial.print("numDiv = ");
     // Serial.println(numDiv);
-    // Serial.print("(numDiv + (Div / 2)) % 100 = ");
-    // Serial.println((numDiv + (Div / 2)) % 100);
+    Serial.print("vpic = ");
+    Serial.println(vpic[Div][VNUMPIXELS]);
 #endif // DEBUG
     int goal = micros();
-    Serial.print("goal - start = ");
-    Serial.println(goal - start);
+    // Serial.print("goal - start = ");
+    // Serial.println(goal - start);
 }

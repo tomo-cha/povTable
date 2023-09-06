@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 # 画像一枚を1つのファイルに変換するコード
+import socket
+import time
 import cv2
 import os
 import math
 import sys
 from PIL import Image
 
-
 # args = sys.argv
+
+# udp設定
+sendAddr = ('192.168.50.150', 1234)  # ポート番号は1234
+udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # 配列設定
 PIXELS = 22  #LED1本あたりのセル数
@@ -27,7 +32,7 @@ file.write('const int Div = ' + str(Div) + ';\n' + '\n')
 file.write('uint32_t vpic [Div][VNUMPIXELS] = {' + '\n') #vpicかhpicに変更。#VNUMPIXELSかHNUMPIXELSに変更。
 
 # 画像ファイルを読み込む(png,jpg,bmpなどが使用可能)
-pic1 = "reiwa.bmp" #1枚目の画像
+pic1 = "color_circle.png" #1枚目の画像
 pic2 = "reiwa.bmp" #2枚目の画像
 pic3 = "reiwa.bmp" #3枚目の画像
 pic4 = "reiwa.bmp" #4枚目の画像
@@ -74,10 +79,14 @@ def polarConv(pic, n):
             
             # https://yutarine.blogspot.com/2018/12/python-format-hex-zerofill.html
             # https://docs.python.org/ja/3/tutorial/inputoutput.html
+            # if(n%2 == 1):
+            #     l[j][i+(n-1)*PIXELS] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
+            # else:
+            #     l[j][abs((PIXELS*n-1)-i)] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
             if(n%2 == 1):
-                l[j][i+(n-1)*PIXELS] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
+                l[j][i+(n-1)*PIXELS] = '%02X%02X%02X' % (rP, gP, bP)
             else:
-                l[j][abs((PIXELS*n-1)-i)] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
+                l[j][abs((PIXELS*n-1)-i)] = '%02X%02X%02X' % (rP, gP, bP)
 
             # imgPolar.putpixel((i, j), (rP, gP, bP))
 
@@ -100,3 +109,12 @@ for j in range(0, Div):
 file.write('};\n')
 
 file.close()
+
+for j in range(0, Div):
+    data = '%02X' % j
+    for i in range(0, PIXELS*NUMTAPES):
+        data+=l[j][i]
+        if i == PIXELS*NUMTAPES-1:
+            udp.sendto(data.encode('utf-8'), sendAddr)
+            time.sleep(0.001) #sleepがないとパケットロスが激増する
+            print(data.encode('utf-8'))
