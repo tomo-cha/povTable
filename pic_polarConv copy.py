@@ -1,18 +1,12 @@
 # -*- coding: utf-8 -*-
 # 画像一枚を1つのファイルに変換するコード
-import socket
+# 展示用
 import time
 import cv2
 import os
 import math
 import sys
 from PIL import Image
-
-# args = sys.argv
-
-# udp設定
-# sendAddr = ('192.168.50.150', 1234)  # ポート番号は1234
-# udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # 配列設定
 PIXELS = 22  # LED1本あたりのセル数
@@ -44,6 +38,7 @@ pic5 = "./img/seibu/u.png"  # 5枚目の画像
 def polarConv(pic, n):
     # 画像データ読み込み
     imgOrgin = cv2.imread(pic)
+    imgRotate = cv2.rotate(imgOrgin, cv2.ROTATE_90_CLOCKWISE) #フォトリフレクタの位置が真上から時計回りに90度ずれたため
 
     # 画像サイズ取得
     h, w, _ = imgOrgin.shape
@@ -86,14 +81,6 @@ def polarConv(pic, n):
             else:
                 l[j][abs((PIXELS*n-1)-i)
                      ] = '0x{:02X}{:02X}{:02X}'.format(rP, gP, bP)
-    
-            # udp設定
-            # if (n % 2 == 1):
-            #     l[j][i+(n-1)*PIXELS] = '%02X%02X%02X' % (rP, gP, bP)
-            # else:
-            #     l[j][abs((PIXELS*n-1)-i)] = '%02X%02X%02X' % (rP, gP, bP)
-
-            # imgPolar.putpixel((i, j), (rP, gP, bP))
 
 
 # 変換, lに格納
@@ -115,13 +102,3 @@ for j in range(0, Div):
 file.write('};\n')
 
 file.close()
-
-# udp設定
-# for j in range(0, Div):
-#     data = '%02X' % j
-#     for i in range(0, PIXELS*NUMTAPES):
-#         data+=l[j][i]
-#         if i == PIXELS*NUMTAPES-1:
-#             udp.sendto(data.encode('utf-8'), sendAddr)
-#             time.sleep(0.001) #sleepがないとパケットロスが激増する
-#             print(data.encode('utf-8'))
